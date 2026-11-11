@@ -4,57 +4,56 @@ namespace App\Http\Controllers;
 
 use App\Models\Alternatif;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AlternatifController extends Controller
 {
     public function index()
     {
-        $alternatifs = Alternatif::all();
-
-        return view('alternatif.index', compact('alternatifs'));
-    }
-
-    public function create()
-    {
-        return view('alternatif.create');
+        return view('alternatif.index', [
+            'alternatifs' => Alternatif::orderBy('id')->get()
+        ]);
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'kode' => 'required|unique:alternatifs,kode',
-            'nama' => 'required'
+            'nama' => 'required|string|max:45|unique:alternatif,nama'
         ]);
 
-        Alternatif::create($request->only('kode', 'nama'));
+        Alternatif::create($request->only('nama'));
 
         return redirect()->route('alternatif.index')
-            ->with('success', 'Alternatif berhasil ditambahkan');
+            ->with('success', 'Alternatif berhasil ditambahkan.');
     }
 
-    public function edit(Alternatif $alternatif)
+    public function update(Request $request, $id)
     {
-        return view('alternatif.edit', compact('alternatif'));
-    }
+        $alternatif = Alternatif::findOrFail($id);
 
-    public function update(Request $request, Alternatif $alternatif)
-    {
         $request->validate([
-            'kode' => 'required|unique:alternatifs,kode,' . $alternatif->id,
-            'nama' => 'required'
+            'nama' => [
+                'required',
+                'string',
+                'max:45',
+                Rule::unique('alternatif', 'nama')->ignore($id)
+            ]
         ]);
 
-        $alternatif->update($request->only('kode', 'nama'));
+        $alternatif->update($request->only('nama'));
 
         return redirect()->route('alternatif.index')
-            ->with('success', 'Alternatif berhasil diperbarui');
+            ->with('success', 'Alternatif berhasil diperbarui.');
     }
 
-    public function destroy(Alternatif $alternatif)
+    public function destroy($id)
     {
+        $alternatif = Alternatif::findOrFail($id);
+
+        $alternatif->kriteria()->detach();
         $alternatif->delete();
 
         return redirect()->route('alternatif.index')
-            ->with('success', 'Alternatif berhasil dihapus');
+            ->with('success', 'Alternatif berhasil dihapus.');
     }
 }
